@@ -1,0 +1,77 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: movies-service-circuit-breaker
+  namespace: cinemaabyss
+spec:
+  host: movies-service.cinemaabyss.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 50
+      http:
+        http1MaxPendingRequests: 100
+        maxRequestsPerConnection: 20
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: monolith-circuit-breaker
+  namespace: cinemaabyss
+spec:
+  host: monolith.cinemaabyss.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 200
+        maxRequestsPerConnection: 50
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+---
+# (Опционально, но очень рекомендую) таймауты+ретраи для movies-service
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: movies-service-timeouts-retries
+  namespace: cinemaabyss
+spec:
+  hosts:
+    - movies-service.cinemaabyss.svc.cluster.local
+  http:
+    - timeout: 2s
+      retries:
+        attempts: 2
+        perTryTimeout: 1s
+        retryOn: 5xx,connect-failure,refused-stream,reset
+      route:
+        - destination:
+            host: movies-service.cinemaabyss.svc.cluster.local
+---
+# (Опционально) таймауты+ретраи для monolith
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: monolith-timeouts-retries
+  namespace: cinemaabyss
+spec:
+  hosts:
+    - monolith.cinemaabyss.svc.cluster.local
+  http:
+    - timeout: 3s
+      retries:
+        attempts: 2
+        perTryTimeout: 1.5s
+        retryOn: 5xx,connect-failure,refused-stream,reset
+      route:
+        - destination:
+            host: monolith.cinemaabyss.svc.cluster.local
