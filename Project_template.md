@@ -26,7 +26,6 @@
 
 <img width="1391" height="548" alt="Снимок экрана 2026-01-25 в 22 00 19" src="https://github.com/user-attachments/assets/0e7b731f-9500-4b39-9355-08915ab96d4a" />
 
-
 Результаты тестов:
 
 <img width="1187" height="552" alt="Снимок экрана 2026-01-25 в 22 08 51" src="https://github.com/user-attachments/assets/13a540c3-5895-445b-a3b4-173ceaa8ad0b" />
@@ -58,8 +57,10 @@
 Результат работы circuit breaker'а:
 
 Запросы:
+
 <img width="883" height="118" alt="Снимок экрана 2026-01-26 в 00 45 10" src="https://github.com/user-attachments/assets/7700e31c-f32c-4d7e-94a0-57c818cace28" />
 
 Статистика:
+
 <img width="1344" height="136" alt="Снимок экрана 2026-01-26 в 00 46 08" src="https://github.com/user-attachments/assets/8e4a8952-662b-462b-a9b7-4ac2461f6be5" />
 
