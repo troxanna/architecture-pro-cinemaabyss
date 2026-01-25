@@ -25,7 +25,41 @@ spec:
     spec:
       containers:
       - name: proxy-service
-        ..... тут
+        image: {{ .Values.proxyService.image.repository }}:{{ .Values.proxyService.image.tag }}
+        imagePullPolicy: {{ .Values.proxyService.image.pullPolicy }}
+        ports:
+        - name: proxy
+          containerPort: {{ .Values.proxyService.service.targetPort }}
+        - name: admin
+          containerPort: {{ .Values.proxyService.service.adminPort }}
+        env:
+          - name: MOVIES_NEW_WEIGHT
+            value: {{ default "0" .Values.config.moviesMigrationPercent | quote }}
+          - name: MOVIES_OLD_WEIGHT
+            value: {{ sub 100 (int (default "0" .Values.config.moviesMigrationPercent)) | quote }}
+          - name: KONG_PROXY_ERROR_LOG
+            value: /dev/stderr
+          - name: KONG_LOG_LEVEL
+            value: info
+        envFrom:
+        - configMapRef:
+            name: cinemaabyss-config
+        - secretRef:
+            name: cinemaabyss-secrets
+        resources:
+          {{- toYaml .Values.proxyService.resources | nindent 10 }}
+        readinessProbe:
+          tcpSocket:
+            port: {{ .Values.proxyService.service.targetPort }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.proxyService.service.targetPort }}
+          initialDelaySeconds: 15
+          periodSeconds: 20
+      imagePullSecrets:
+        - name: dockerconfigjson
 ---
 apiVersion: v1
 kind: Service
@@ -38,5 +72,15 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   selector:
-    ... и тут
+    app: proxy-service
+  ports:
+  - name: proxy
+    port: {{ .Values.proxyService.service.port }}
+    targetPort: {{ .Values.proxyService.service.targetPort }}
+    protocol: TCP
+  - name: admin
+    port: {{ .Values.proxyService.service.adminPort }}
+    targetPort: {{ .Values.proxyService.service.adminPort }}
+    protocol: TCP
+  type: {{ .Values.proxyService.service.type }}
 {{- end }}
