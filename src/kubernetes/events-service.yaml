@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: events-service
-          image: ghcr.io/troxanna/architecture-pro-cinemaabyss/events-service:cinema
+          image: ghcr.io/troxanna/architecture-pro-cinemaabyss/events-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8082
@@ -44,14 +44,13 @@ spec:
               cpu: "100m"
               memory: "128Mi"
           readinessProbe:
-            httpGet:
-              path: /api/events/health
+            tcpSocket:
               port: 8082
             initialDelaySeconds: 5
             periodSeconds: 10
+
           livenessProbe:
-            httpGet:
-              path: /api/events/health
+            tcpSocket:
               port: 8082
             initialDelaySeconds: 15
             periodSeconds: 20

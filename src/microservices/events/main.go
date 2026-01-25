@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -70,74 +71,74 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-	})
+	mux.HandleFunc("/api/events/health", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]any{"status": true})
+	  })
 
 	// Универсальный endpoint: POST /events
 	// body: { "type": "movie|user|payment", "payload": {...} }
-	mux.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
+
+	makeCreateHandler := func(eventType string) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+		  if r.Method != http.MethodPost {
 			writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
 			return
-		}
-
-		var req createReq
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		  }
+	  
+		  // payload берём из тела как JSON (любой объект)
+		  body, err := io.ReadAll(r.Body)
+		  if err != nil || len(body) == 0 {
 			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid json"})
 			return
-		}
-
-		req.Type = strings.ToLower(strings.TrimSpace(req.Type))
-		topic, ok := topics[req.Type]
-		if !ok {
-			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: `type must be one of: "movie", "user", "payment"`})
+		  }
+	  
+		  // проверка что это валидный JSON
+		  var tmp any
+		  if err := json.Unmarshal(body, &tmp); err != nil {
+			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid json"})
 			return
-		}
-		if len(req.Payload) == 0 || string(req.Payload) == "null" {
-			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "payload is required"})
-			return
-		}
-
-		ev := Event{
-			ID:        makeEventID(req.Type),
-			Type:      req.Type,
+		  }
+	  
+		  ev := Event{
+			ID:        makeEventID(eventType),
+			Type:      eventType,
 			Timestamp: time.Now().UTC().Format(time.RFC3339),
-			Payload:   req.Payload,
-		}
-
-		value, err := json.Marshal(ev)
-		if err != nil {
+			Payload:   json.RawMessage(body),
+		  }
+	  
+		  value, err := json.Marshal(ev)
+		  if err != nil {
 			writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "failed to marshal event"})
 			return
-		}
-
-		msg := kafka.Message{
+		  }
+	  
+		  topic := topics[eventType]
+		  msg := kafka.Message{
 			Topic: topic,
 			Key:   []byte(ev.ID),
 			Value: value,
-		}
-
-		// пишем в Kafka
-		if err := writer.WriteMessages(r.Context(), msg); err != nil {
+		  }
+	  
+		  if err := writer.WriteMessages(r.Context(), msg); err != nil {
 			log.Printf("[producer] write failed: %v", err)
 			writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "kafka write failed"})
 			return
-		}
-
-		// kafka-go после WriteMessages обычно проставляет Partition/Offset в msg
-		resp := EventResponse{
+		  }
+	  
+		  resp := EventResponse{
 			Status:    "success",
 			Partition: msg.Partition,
 			Offset:    msg.Offset,
 			Event:     ev,
+		  }
+	  
+		  writeJSON(w, http.StatusCreated, resp) // ← ВАЖНО: 201
 		}
+	  }
 
-		log.Printf("[producer] produced %s to %s partition=%d offset=%d id=%s",
-			ev.Type, topic, msg.Partition, msg.Offset, ev.ID)
-
-		writeJSON(w, http.StatusOK, resp)
-	})
+	mux.HandleFunc("/api/events/movie", makeCreateHandler("movie"))
+	mux.HandleFunc("/api/events/user", makeCreateHandler("user"))
+	mux.HandleFunc("/api/events/payment", makeCreateHandler("payment"))
 
 	server := &http.Server{
 		Addr:              ":" + port,
