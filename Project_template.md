@@ -51,6 +51,10 @@
 
 <img width="1355" height="455" alt="Снимок экрана 2026-01-25 в 21 55 01" src="https://github.com/user-attachments/assets/58ae57ea-5e59-4586-8326-e4151e46a587" />
 
+Результаты тестов:
+[ссылка на файл](https://github.com/troxanna/architecture-pro-cinemaabyss/blob/cinema/screens/k8s_test_result.png)
+
+
 
 # Задание 5
 
