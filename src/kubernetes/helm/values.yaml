@@ -60,7 +60,7 @@ proxyService:
   resources:
     limits:
       cpu: 500m
-      memory: 512Mi
+      memory: 1Gi
     requests:
       cpu: 100m
       memory: 128Mi
@@ -114,8 +114,8 @@ eventsService:
 kafka:
   enabled: true
   image:
-    repository: wurstmeister/kafka
-    tag: 2.13-2.7.0
+    repository: confluentinc/cp-kafka
+    tag: 7.6.1
     pullPolicy: IfNotPresent
   replicas: 1
   resources:
@@ -144,8 +144,8 @@ kafka:
 zookeeper:
   enabled: true
   image:
-    repository: wurstmeister/zookeeper
-    tag: latest
+    repository: confluentinc/cp-zookeeper
+    tag: 7.6.1
     pullPolicy: IfNotPresent
   replicas: 1
   resources:
