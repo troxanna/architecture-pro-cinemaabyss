@@ -1,0 +1,31 @@
+_format_version: "3.0"
+_transform: true
+
+upstreams:
+  - name: movies-upstream
+    targets:
+      - target: monolith:8080
+        weight: ${MOVIES_OLD_WEIGHT}
+      - target: movies-service:8081
+        weight: ${MOVIES_NEW_WEIGHT}
+
+services:
+  # Канареечный роут для /api/movies
+  - name: movies-split
+    host: movies-upstream
+    port: 80
+    protocol: http
+    routes:
+      - name: movies-api
+        paths:
+          - /api/movies
+        strip_path: false
+
+  # Всё остальное — в монолит
+  - name: monolith
+    url: http://monolith:8080
+    routes:
+      - name: catchall
+        paths:
+          - /
+        strip_path: false

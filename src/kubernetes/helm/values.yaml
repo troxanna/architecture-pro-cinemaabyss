@@ -5,7 +5,7 @@ global:
 
 # Image pull secrets
 imagePullSecrets:
-  dockerconfigjson: ewoJImF1dGhzIjogewoJCSJnaGNyLmlvIjogewoJCQkiYXV0aCI6
+  dockerconfigjson: eyJhdXRocyI6eyJnaGNyLmlvIjp7ImF1dGgiOiJkSEp2ZUdGdWJtRTZaMmh3WDBwT01GUlVkbFp4Wm5sVGVIZ3hVMUJTVDBKd1pVMVFUVXB6TUhoVE1qUmFkMm96TXc9PSJ9fX0K
 # Database configuration
 database:
   host: postgres
@@ -33,7 +33,7 @@ database:
 monolith:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/monolith
+    repository: ghcr.io/troxanna/architecture-pro-cinemaabyss/monolith
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -53,14 +53,14 @@ monolith:
 proxyService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/proxy-service
+    repository: ghcr.io/troxanna/architecture-pro-cinemaabyss/proxy-service
     tag: latest
     pullPolicy: Always
   replicas: 1
   resources:
     limits:
-      cpu: 300m
-      memory: 256Mi
+      cpu: 500m
+      memory: 1Gi
     requests:
       cpu: 100m
       memory: 128Mi
@@ -68,19 +68,20 @@ proxyService:
     port: 80
     targetPort: 8000
     type: ClusterIP
+    adminPort: 8001
 
 # Movies service configuration
 moviesService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/movies-service
+    repository: ghcr.io/troxanna/architecture-pro-cinemaabyss/movies-service
     tag: latest
     pullPolicy: Always
   replicas: 1
   resources:
     limits:
-      cpu: 300m
-      memory: 256Mi
+      cpu: 500m
+      memory: 512Mi
     requests:
       cpu: 100m
       memory: 128Mi
@@ -93,7 +94,7 @@ moviesService:
 eventsService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/events-service
+    repository: ghcr.io/troxanna/architecture-pro-cinemaabyss/events-service
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -113,8 +114,8 @@ eventsService:
 kafka:
   enabled: true
   image:
-    repository: wurstmeister/kafka
-    tag: 2.13-2.7.0
+    repository: confluentinc/cp-kafka
+    tag: 7.6.1
     pullPolicy: IfNotPresent
   replicas: 1
   resources:
@@ -143,8 +144,8 @@ kafka:
 zookeeper:
   enabled: true
   image:
-    repository: wurstmeister/zookeeper
-    tag: latest
+    repository: confluentinc/cp-zookeeper
+    tag: 7.6.1
     pullPolicy: IfNotPresent
   replicas: 1
   resources:
